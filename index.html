@@ -160,10 +160,11 @@
             formatChange(spread, prevSpread, "SPREAD");
             if (spread < 0) spreadEl.className = "value status-danger";
 
+            // 수치에 맞춰 위험(빨강)으로 변경
             document.getElementById("BUFFETT").innerText = "190.5%";
-            document.getElementById("BUFFETT").className = "value status-warning";
+            document.getElementById("BUFFETT").className = "value status-danger";
             document.getElementById("SHILLER").innerText = "35.2";
-            document.getElementById("SHILLER").className = "value status-warning";
+            document.getElementById("SHILLER").className = "value status-danger";
 
             document.getElementById('status-msg').innerText = `Update: ${new Date().toLocaleTimeString()} (${((Date.now() - startTime) / 1000).toFixed(1)}s)`;
         }
