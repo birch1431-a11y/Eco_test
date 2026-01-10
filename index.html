@@ -23,7 +23,7 @@
 </head>
 <body>
 
-    <div class="header" onclick="resetKey()">🔄 ECON DASHBOARD V5.7</div>
+    <div class="header" onclick="resetKey()">🔄 ECON DASHBOARD V5.8</div>
 
     <div class="category">외환 (Forex)</div><hr class="hr-short">
     <div class="item-row"><span class="label">달러지수</span><div class="val-container"><span class="value" id="DXY">--</span><div class="change" id="DXY-c">--</div></div></div>
@@ -55,7 +55,8 @@
     <div class="item-row"><span class="label">XRP<span class="unit-text">(리플)</span></span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
 
     <div class="category">시장 심리 및 밸류에이션 (한/미 비교)</div><hr class="hr-short">
-    <div class="item-row"><span class="label">미국 VIX / 한 VKOSPI</span><div class="val-container"><span class="value" style="display:inline-block;" id="VIX">--</span> / <span class="value" style="display:inline-block;" id="VKOSPI">--</span><div class="change" id="VIX_KOSPI-c">VIX vs VKOSPI</div></div></div>
+    <div class="item-row"><span class="label">공포지수 (미 VIX)</span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
+    <div class="item-row"><span class="label">공포지수 (한 VKOSPI)</span><div class="val-container"><span class="value" id="VKOSPI">--</span><div class="change" id="VKOSPI-c">--</div></div></div>
     <div class="item-row"><span class="label">미 금리차<span class="unit-text">(10Y-2Y)</span></span><div class="val-container"><span class="value" id="SPREAD_US">--</span><div class="change" id="SPREAD_US-c">--</div></div></div>
     <div class="item-row"><span class="label">한 금리차<span class="unit-text">(10Y-3Y)</span></span><div class="val-container"><span class="value" id="SPREAD_KR">--</span><div class="change" id="SPREAD_KR-c">--</div></div></div>
     <div class="item-row"><span class="label">버핏지수/쉴러PER</span><span class="value" style="font-size:0.85rem; color:#ffbb33;">190.5% / 35.2</span></div>
@@ -76,11 +77,11 @@
             return null;
         }
 
-        let rates = { us10: 0, us2: 0, us10p: 0, us2p: 0, kr10: 0, kr3: 0, kr10p: 0, kr3p: 0 };
+        let r = { us10:0, us2:0, us10p:0, us2p:0, kr10:0, kr3:0, kr10p:0, kr3p:0 };
 
         function formatChange(current, prev, id) {
             const diff = current - prev;
-            const percent = (diff / prev * 100).toFixed(2);
+            const percent = prev !== 0 ? (diff / Math.abs(prev) * 100).toFixed(2) : "0.00";
             const sign = diff > 0 ? "▲" : diff < 0 ? "▼" : "";
             const cls = diff > 0 ? "up" : diff < 0 ? "down" : "";
             const changeEl = document.getElementById(id + "-c");
@@ -99,10 +100,10 @@
                     const price = meta.regularMarketPrice;
                     const prev = meta.previousClose;
 
-                    if (id === "US10Y") { rates.us10 = price; rates.us10p = prev; }
-                    if (id === "US2Y") { rates.us2 = price; rates.us2p = prev; }
-                    if (id === "KR10Y") { rates.kr10 = price; rates.kr10p = prev; }
-                    if (id === "KR3Y") { rates.kr3 = price; rates.kr3p = prev; }
+                    if (id === "US10Y") { r.us10 = price; r.us10p = prev; }
+                    if (id === "US2Y") { r.us2 = price; r.us2p = prev; }
+                    if (id === "KR10Y") { r.kr10 = price; r.kr10p = prev; }
+                    if (id === "KR3Y") { r.kr3 = price; r.kr3p = prev; }
 
                     if (id.includes("Y")) el.innerText = price.toFixed(3) + "%";
                     else if (price > 100) el.innerText = price.toLocaleString(undefined, {maximumFractionDigits: 2});
@@ -112,7 +113,7 @@
 
                     if (id === "VIX" || id === "VKOSPI") {
                         if (price >= 30) el.className = "value status-danger";
-                        else if (price >= 20) el.className = "value status-warning";
+                        else if (price >= 20) el.className = "className status-warning";
                         else el.className = "value status-safe";
                     }
                 }
@@ -136,8 +137,8 @@
             const fxPromises = fx.map(async (s) => {
                 if(!key) return;
                 try {
-                    const r = await fetch(`https://api.twelvedata.com/quote?symbol=${s}&apikey=${key}`);
-                    const d = await r.json();
+                    const res = await fetch(`https://api.twelvedata.com/quote?symbol=${s}&apikey=${key}`);
+                    const d = await res.json();
                     if (d.close) {
                         const cur = parseFloat(d.close);
                         const pre = parseFloat(d.previous_close);
@@ -146,20 +147,19 @@
                     }
                 } catch(e) { }
             });
-
             await Promise.all(fxPromises);
 
-            // [미국 금리차 계산]
-            const spUS = rates.us10 - rates.us2;
-            const spUSp = rates.us10p - rates.us2p;
+            // [미국 금리차]
+            const spUS = r.us10 - r.us2;
+            const spUSp = r.us10p - r.us2p;
             const elUS = document.getElementById("SPREAD_US");
             elUS.innerText = spUS.toFixed(3) + "%p";
             formatChange(spUS, spUSp, "SPREAD_US");
             if (spUS < 0) elUS.className = "value status-danger";
 
-            // [한국 금리차 계산]
-            const spKR = rates.kr10 - rates.kr3;
-            const spKRp = rates.kr10p - rates.kr3p;
+            // [한국 금리차]
+            const spKR = r.kr10 - r.kr3;
+            const spKRp = r.kr10p - r.kr3p;
             const elKR = document.getElementById("SPREAD_KR");
             elKR.innerText = spKR.toFixed(3) + "%p";
             formatChange(spKR, spKRp, "SPREAD_KR");
