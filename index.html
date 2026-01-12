@@ -25,19 +25,21 @@
 </head>
 <body>
 
-    <div class="header" onclick="resetKey()">🔄 ECON DASHBOARD V5.4</div>
+    <div class="header" onclick="resetKey()">🔄 ECON DASHBOARD V5.5</div>
 
     <div class="category">외환 (Forex)</div><hr class="hr-short">
     <div class="item-row"><span class="label">달러지수</span><div class="val-container"><span class="value" id="DXY">--</span><div class="change" id="DXY-c">--</div></div></div>
     <div class="item-row"><span class="label">원/달러</span><div class="val-container"><span class="value" id="USD/KRW">--</span><div class="change" id="USD/KRW-c">--</div></div></div>
-    <div class="item-row"><span class="label">100엔/원</span><div class="val-container"><span class="value" id="JPY/KRW">--</span><div class="change" id="JPY/KRW-c">--</div></div></div>
+    <div class="item-row"><span class="label">원/엔</span><div class="val-container"><span class="value" id="JPY/KRW">--</span><div class="change" id="JPY/KRW-c">--</div></div></div>
     <div class="item-row"><span class="label">원/유로</span><div class="val-container"><span class="value" id="EUR/KRW">--</span><div class="change" id="EUR/KRW-c">--</div></div></div>
     <div class="item-row"><span class="label">원/위안</span><div class="val-container"><span class="value" id="CNY/KRW">--</span><div class="change" id="CNY/KRW-c">--</div></div></div>
 
     <div class="category">주요 증시 (Index)</div><hr class="hr-short">
+    <div class="item-row"><span class="label">미 증시 시총<span class="unit-text">($T)</span></span><div class="val-container"><span class="value" id="US_MCAP">--</span><div class="change" id="US_MCAP-c">--</div></div></div>
     <div class="item-row"><span class="label">S&P 500</span><div class="val-container"><span class="value" id="SP500">--</span><div class="change" id="SP500-c">--</div></div></div>
     <div class="item-row"><span class="label">NASDAQ</span><div class="val-container"><span class="value" id="NASDAQ">--</span><div class="change" id="NASDAQ-c">--</div></div></div>
     <div class="item-row"><span class="label">다우존스</span><div class="val-container"><span class="value" id="DOW">--</span><div class="change" id="DOW-c">--</div></div></div>
+    <div class="item-row"><span class="label">한 증시 시총<span class="unit-text">(조₩)</span></span><div class="val-container"><span class="value" id="KR_MCAP">--</span><div class="change" id="KR_MCAP-c">--</div></div></div>
     <div class="item-row"><span class="label">KOSPI</span><div class="val-container"><span class="value" id="KOSPI">--</span><div class="change" id="KOSPI-c">--</div></div></div>
     <div class="item-row"><span class="label">KOSDAQ</span><div class="val-container"><span class="value" id="KOSDAQ">--</span><div class="change" id="KOSDAQ-c">--</div></div></div>
 
@@ -59,12 +61,17 @@
     <div class="category">시장 심리 및 밸류에이션</div><hr class="hr-short">
     <div class="item-row"><span class="label">VIX 지수<span class="unit-text">(공포지수)</span></span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
     <div class="item-row"><span class="label">장단기 금리차<span class="unit-text">(10Y-2Y)</span></span><div class="val-container"><span class="value" id="SPREAD">--</span><div class="change" id="SPREAD-c">--</div></div></div>
-    <div class="item-row"><span class="label">버핏 지수<span class="unit-text">(Est.)</span></span><span class="value" id="BUFFETT">--</span></div>
+    <div class="item-row"><span class="label">버핏 지수<span class="unit-text">(실시간 연동)</span></span><span class="value" id="BUFFETT">--</span></div>
     <div class="item-row"><span class="label">쉴러 PER<span class="unit-text">(CAPE)</span></span><span class="value" id="SHILLER">--</span></div>
 
     <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-top:30px;">데이터 로딩 중...</div>
 
     <script>
+        // 고정 상수 (최신 데이터 기준)
+        const BASE_US_GDP = 27.94; // 미국 GDP (Trillion $)
+        const BASE_US_MCAP = 55.2; // 미국 기준 시총 (VTI 추정치 반영용)
+        const BASE_KR_MCAP = 2450; // 한국 상장사 합계 시총 기준 (조원)
+
         async function fetchData(url) {
             const proxies = [`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, `https://corsproxy.io/?${encodeURIComponent(url)}` ];
             for (let proxy of proxies) {
@@ -79,6 +86,7 @@
         }
 
         let globalRates = { "10Y": 0, "2Y": 0, "10Y_prev": 0, "2Y_prev": 0 };
+        let vtiChange = 0; // 버핏 지수 실시간 연동용
 
         function formatChange(current, prev, id) {
             const diff = current - prev;
@@ -89,6 +97,7 @@
             if(changeEl) {
                 changeEl.innerHTML = `<span class="${cls}">${sign} ${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})} (${percent}%)</span>`;
             }
+            return percent;
         }
 
         async function getYahoo(ticker, id) {
@@ -104,11 +113,29 @@
                     if (id === "US10Y") { globalRates["10Y"] = price; globalRates["10Y_prev"] = prev; }
                     if (id === "US2Y") { globalRates["2Y"] = price; globalRates["2Y_prev"] = prev; }
 
-                    if (id.includes("US")) el.innerText = price.toFixed(3) + "%";
+                    if (id.includes("US") && !id.includes("MCAP")) el.innerText = price.toFixed(3) + "%";
                     else if (price > 100) el.innerText = price.toLocaleString(undefined, {maximumFractionDigits: 2});
                     else el.innerText = price.toFixed(2);
 
-                    formatChange(price, prev, id);
+                    const pChange = formatChange(price, prev, id);
+
+                    // 시가총액 실시간 근산치 로직
+                    if (id === "US_MCAP_VTI") {
+                        const curMcap = (BASE_US_MCAP * (price / prev));
+                        document.getElementById("US_MCAP").innerText = curMcap.toFixed(2);
+                        formatChange(curMcap, BASE_US_MCAP, "US_MCAP");
+                        // 버핏 지수 연동 (시총/GDP)
+                        const liveBuffett = (curMcap / BASE_US_GDP * 100).toFixed(1);
+                        const bEl = document.getElementById("BUFFETT");
+                        bEl.innerText = liveBuffett + "%";
+                        bEl.className = liveBuffett > 150 ? "value status-danger" : "value status-warning";
+                    }
+
+                    if (id === "KOSPI") {
+                        const curKrMcap = (BASE_KR_MCAP * (price / prev));
+                        document.getElementById("KR_MCAP").innerText = Math.floor(curKrMcap).toLocaleString();
+                        formatChange(curKrMcap, BASE_KR_MCAP, "KR_MCAP");
+                    }
 
                     if (id === "VIX") {
                         if (price >= 30) el.className = "value status-danger";
@@ -122,6 +149,7 @@
         async function loadData() {
             const startTime = Date.now();
             const yahooItems = [
+                ["VTI", "US_MCAP_VTI"], // 미국 시총 연동용
                 ["DX-Y.NYB", "DXY"], ["^GSPC", "SP500"], ["^IXIC", "NASDAQ"], ["^DJI", "DOW"],
                 ["^KS11", "KOSPI"], ["^KQ11", "KOSDAQ"], ["^TYX", "US30Y"], ["^TNX", "US10Y"],
                 ["^IRX", "US2Y"], ["GC=F", "GOLD"], ["SI=F", "SILVER"], ["PL=F", "PLATINUM"],
@@ -160,9 +188,7 @@
             formatChange(spread, prevSpread, "SPREAD");
             if (spread < 0) spreadEl.className = "value status-danger";
 
-            // 수치에 맞춰 위험(빨강)으로 변경
-            document.getElementById("BUFFETT").innerText = "190.5%";
-            document.getElementById("BUFFETT").className = "value status-danger";
+            // 정적 지표 처리
             document.getElementById("SHILLER").innerText = "35.2";
             document.getElementById("SHILLER").className = "value status-danger";
 
