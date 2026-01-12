@@ -25,7 +25,7 @@
 </head>
 <body>
 
-    <div class="header" onclick="resetKey()">🔄 ECON DASHBOARD V5.5</div>
+    <div class="header" onclick="resetKey()">🔄 ECON DASHBOARD V5.6</div>
 
     <div class="category">외환 (Forex)</div><hr class="hr-short">
     <div class="item-row"><span class="label">달러지수</span><div class="val-container"><span class="value" id="DXY">--</span><div class="change" id="DXY-c">--</div></div></div>
@@ -67,10 +67,9 @@
     <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-top:30px;">데이터 로딩 중...</div>
 
     <script>
-        // 고정 상수 (최신 데이터 기준)
-        const BASE_US_GDP = 27.94; // 미국 GDP (Trillion $)
-        const BASE_US_MCAP = 55.2; // 미국 기준 시총 (VTI 추정치 반영용)
-        const BASE_KR_MCAP = 2450; // 한국 상장사 합계 시총 기준 (조원)
+        const BASE_US_GDP = 27.94; 
+        const BASE_US_MCAP = 55.2; 
+        const BASE_KR_MCAP = 2450; 
 
         async function fetchData(url) {
             const proxies = [`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, `https://corsproxy.io/?${encodeURIComponent(url)}` ];
@@ -86,9 +85,9 @@
         }
 
         let globalRates = { "10Y": 0, "2Y": 0, "10Y_prev": 0, "2Y_prev": 0 };
-        let vtiChange = 0; // 버핏 지수 실시간 연동용
 
         function formatChange(current, prev, id) {
+            if (!prev || !current) return "0.00";
             const diff = current - prev;
             const percent = (diff / prev * 100).toFixed(2);
             const sign = diff > 0 ? "▲" : diff < 0 ? "▼" : "";
@@ -113,44 +112,48 @@
                     if (id === "US10Y") { globalRates["10Y"] = price; globalRates["10Y_prev"] = prev; }
                     if (id === "US2Y") { globalRates["2Y"] = price; globalRates["2Y_prev"] = prev; }
 
-                    if (id.includes("US") && !id.includes("MCAP")) el.innerText = price.toFixed(3) + "%";
-                    else if (price > 100) el.innerText = price.toLocaleString(undefined, {maximumFractionDigits: 2});
-                    else el.innerText = price.toFixed(2);
-
-                    const pChange = formatChange(price, prev, id);
-
-                    // 시가총액 실시간 근산치 로직
-                    if (id === "US_MCAP_VTI") {
-                        const curMcap = (BASE_US_MCAP * (price / prev));
-                        document.getElementById("US_MCAP").innerText = curMcap.toFixed(2);
-                        formatChange(curMcap, BASE_US_MCAP, "US_MCAP");
-                        // 버핏 지수 연동 (시총/GDP)
-                        const liveBuffett = (curMcap / BASE_US_GDP * 100).toFixed(1);
-                        const bEl = document.getElementById("BUFFETT");
-                        bEl.innerText = liveBuffett + "%";
-                        bEl.className = liveBuffett > 150 ? "value status-danger" : "value status-warning";
+                    if (el) {
+                        if (id.includes("US") && !id.includes("MCAP")) el.innerText = price.toFixed(3) + "%";
+                        else if (price > 100) el.innerText = price.toLocaleString(undefined, {maximumFractionDigits: 2});
+                        else el.innerText = price.toFixed(2);
+                        formatChange(price, prev, id);
                     }
 
+                    // 연동 계산 (에러 방지를 위해 조건문 강화)
+                    if (ticker === "VTI") {
+                        const curMcap = (BASE_US_MCAP * (price / prev));
+                        const mcapEl = document.getElementById("US_MCAP");
+                        if (mcapEl) {
+                            mcapEl.innerText = curMcap.toFixed(2);
+                            formatChange(curMcap, BASE_US_MCAP, "US_MCAP");
+                            const liveBuffett = (curMcap / BASE_US_GDP * 100).toFixed(1);
+                            const bEl = document.getElementById("BUFFETT");
+                            bEl.innerText = liveBuffett + "%";
+                            bEl.className = liveBuffett > 150 ? "value status-danger" : "value status-warning";
+                        }
+                    }
                     if (id === "KOSPI") {
                         const curKrMcap = (BASE_KR_MCAP * (price / prev));
-                        document.getElementById("KR_MCAP").innerText = Math.floor(curKrMcap).toLocaleString();
-                        formatChange(curKrMcap, BASE_KR_MCAP, "KR_MCAP");
+                        const krMcapEl = document.getElementById("KR_MCAP");
+                        if (krMcapEl) {
+                            krMcapEl.innerText = Math.floor(curKrMcap).toLocaleString();
+                            formatChange(curKrMcap, BASE_KR_MCAP, "KR_MCAP");
+                        }
                     }
-
-                    if (id === "VIX") {
+                    if (id === "VIX" && el) {
                         if (price >= 30) el.className = "value status-danger";
                         else if (price >= 20) el.className = "value status-warning";
                         else el.className = "value status-safe";
                     }
                 }
-            } catch (e) { el.innerText = "N/A"; }
+            } catch (e) { if(el) el.innerText = "N/A"; }
         }
 
         async function loadData() {
             const startTime = Date.now();
+            // 시총 연동을 위한 VTI를 리스트에 포함
             const yahooItems = [
-                ["VTI", "US_MCAP_VTI"], // 미국 시총 연동용
-                ["DX-Y.NYB", "DXY"], ["^GSPC", "SP500"], ["^IXIC", "NASDAQ"], ["^DJI", "DOW"],
+                ["VTI", "VTI_HIDDEN"], ["DX-Y.NYB", "DXY"], ["^GSPC", "SP500"], ["^IXIC", "NASDAQ"], ["^DJI", "DOW"],
                 ["^KS11", "KOSPI"], ["^KQ11", "KOSDAQ"], ["^TYX", "US30Y"], ["^TNX", "US10Y"],
                 ["^IRX", "US2Y"], ["GC=F", "GOLD"], ["SI=F", "SILVER"], ["PL=F", "PLATINUM"],
                 ["BTC-USD", "BTC"], ["ETH-USD", "ETH"], ["XRP-USD", "XRP"], ["^VIX", "VIX"]
@@ -181,14 +184,17 @@
 
             await Promise.all([...yahooPromises, ...fxPromises]);
 
+            // 금리차 계산 (안전하게 마지막에 수행)
             const spread = globalRates["10Y"] - globalRates["2Y"];
             const prevSpread = globalRates["10Y_prev"] - globalRates["2Y_prev"];
             const spreadEl = document.getElementById("SPREAD");
-            spreadEl.innerText = spread.toFixed(3) + "%p";
-            formatChange(spread, prevSpread, "SPREAD");
-            if (spread < 0) spreadEl.className = "value status-danger";
+            if (spreadEl) {
+                spreadEl.innerText = spread.toFixed(3) + "%p";
+                formatChange(spread, prevSpread, "SPREAD");
+                if (spread < 0) spreadEl.className = "value status-danger";
+            }
 
-            // 정적 지표 처리
+            // 고정 지표
             document.getElementById("SHILLER").innerText = "35.2";
             document.getElementById("SHILLER").className = "value status-danger";
 
