@@ -182,25 +182,40 @@
                 else return;
             }
 
-            const fx = ["USD/KRW", "JPY/KRW", "EUR/KRW", "CNY/KRW"];
-            const fxPromises = fx.map(async (s) => {
+            // --- 수정된 외환 일괄 호출 로직 ---
+            const fxSymbols = "USD/KRW,JPY/KRW,EUR/KRW,CNY/KRW";
+            const fxPromise = (async () => {
                 try {
-                    const r = await fetch(`https://api.twelvedata.com/quote?symbol=${s}&apikey=${key}`);
+                    const r = await fetch(`https://api.twelvedata.com/quote?symbol=${fxSymbols}&apikey=${key}`);
                     const d = await r.json();
-                    if (d.close) {
-                        const cur = parseFloat(d.close);
-                        const pre = parseFloat(d.previous_close);
-                        if (s === "USD/KRW" || s === "EUR/KRW" || s === "CNY/KRW") {
-                            document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                        } else {
-                            document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2});
+                    
+                    const symbols = fxSymbols.split(',');
+                    symbols.forEach(s => {
+                        const data = d[s];
+                        const el = document.getElementById(s);
+                        if (data && data.close && el) {
+                            const cur = parseFloat(data.close);
+                            const pre = parseFloat(data.previous_close);
+                            if (s === "USD/KRW" || s === "EUR/KRW" || s === "CNY/KRW") {
+                                el.innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            } else {
+                                el.innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2});
+                            }
+                            formatChange(cur, pre, s);
+                        } else if (el) {
+                            el.innerText = "N/A";
                         }
-                        formatChange(cur, pre, s);
-                    }
-                } catch(e) { document.getElementById(s).innerText = "N/A"; }
-            });
+                    });
+                } catch(e) { 
+                    fxSymbols.split(',').forEach(s => {
+                        const el = document.getElementById(s);
+                        if(el) el.innerText = "N/A";
+                    });
+                }
+            })();
+            // -------------------------------
 
-            await Promise.all([...yahooPromises, ...fxPromises]);
+            await Promise.all([...yahooPromises, fxPromise]);
 
             const spread = globalRates["10Y"] - globalRates["2Y"];
             const prevSpread = globalRates["10Y_prev"] - globalRates["2Y_prev"];
