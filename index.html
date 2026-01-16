@@ -20,12 +20,11 @@
         .status-danger { color: #ff4444 !important; }
         .status-warning { color: #ffbb33 !important; }
         .status-safe { color: #00ff88 !important; }
-        .footer-copy { text-align: center; font-size: 0.7rem; color: #555; margin: 40px 0 10px 0; border-top: 1px solid #222; padding-top: 20px; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
 
-    <div class="header" onclick="location.reload()">🔄 ECON DASHBOARD V5.9</div>
+    <div class="header" onclick="resetKey()">🔄 ECON DASHBOARD V5.9</div>
 
     <div class="category">외환 (Forex)</div><hr class="hr-short">
     <div class="item-row"><span class="label">달러지수</span><div class="val-container"><span class="value" id="DXY">--</span><div class="change" id="DXY-c">--</div></div></div>
@@ -64,16 +63,9 @@
     <div class="item-row"><span class="label">버핏 지수<span class="unit-text">(실시간 연동)</span></span><span class="value" id="BUFFETT">--</span></div>
     <div class="item-row"><span class="label">쉴러 PER<span class="unit-text">(CAPE)</span></span><span class="value" id="SHILLER">--</span></div>
 
-    <div class="footer-copy">
-        © 2026 Developed by <span style="color: #888; font-weight: 500;">S.K. Chun</span>
-    </div>
-
-    <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-bottom:30px;">데이터 로딩 중...</div>
+    <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-top:30px;">데이터 로딩 중...</div>
 
     <script>
-        // *** 여기에 API 키를 입력하세요 ***
-        const MY_API_KEY = "7142915ec1dc45caad56dfc9fcf07341";
-
         const BASE_US_GDP = 27.94; 
         const BASE_US_MCAP = 55.2; 
         const BASE_KR_MCAP = 2450; 
@@ -91,7 +83,7 @@
             return null;
         }
 
-        let globalRates = { "10Y": null, "2Y": null, "10Y_prev": null, "2Y_prev": null };
+        let globalRates = { "10Y": 0, "2Y": 0, "10Y_prev": 0, "2Y_prev": 0 };
 
         function formatChange(current, prev, id) {
             if (!prev || !current) return "0.00";
@@ -120,10 +112,18 @@
                     if (id === "US2Y") { globalRates["2Y"] = price; globalRates["2Y_prev"] = prev; }
 
                     if (el) {
-                        if (ticker === "^IXIC" || ticker === "^DJI") el.innerText = price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                        else if (id.includes("US") && !id.includes("MCAP")) el.innerText = price.toFixed(3) + "%";
-                        else if (price > 100) el.innerText = price.toLocaleString(undefined, {maximumFractionDigits: 2});
-                        else el.innerText = price.toFixed(2);
+                        if (ticker === "^IXIC" || ticker === "^DJI") {
+                            el.innerText = price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        } 
+                        else if (id.includes("US") && !id.includes("MCAP")) {
+                            el.innerText = price.toFixed(3) + "%";
+                        }
+                        else if (price > 100) {
+                            el.innerText = price.toLocaleString(undefined, {maximumFractionDigits: 2});
+                        }
+                        else {
+                            el.innerText = price.toFixed(2);
+                        }
                         formatChange(price, prev, id);
                     }
 
@@ -135,6 +135,7 @@
                             mcapEl.innerText = curMcap.toFixed(2);
                             formatChange(curMcap, BASE_US_MCAP, "US_MCAP");
                         }
+                        
                         const liveBuffett = parseFloat((curMcap / BASE_US_GDP * 100).toFixed(1));
                         const bEl = document.getElementById("BUFFETT");
                         if (bEl) {
@@ -171,52 +172,73 @@
                 ["^IRX", "US2Y"], ["GC=F", "GOLD"], ["SI=F", "SILVER"], ["PL=F", "PLATINUM"],
                 ["BTC-USD", "BTC"], ["ETH-USD", "ETH"], ["XRP-USD", "XRP"], ["^VIX", "VIX"]
             ];
-            
-            // 1. Yahoo 데이터 우선 로딩
+
             const yahooPromises = yahooItems.map(item => getYahoo(item[0], item[1]));
-            await Promise.all(yahooPromises);
 
-            // 2. 환율 데이터 순차 로딩 (0.5초 간격으로 API 제한 회피)
-            const fx = ["USD/KRW", "JPY/KRW", "EUR/KRW", "CNY/KRW"];
-            for (const s of fx) {
+            let key = localStorage.getItem('ECON_KEY_V5');
+            if (!key) {
+                key = prompt("Twelve Data API 키를 입력하세요.");
+                if(key) localStorage.setItem('ECON_KEY_V5', key.trim());
+                else return;
+            }
+
+            // --- 수정된 외환 일괄 호출 로직 ---
+            const fxSymbols = "USD/KRW,JPY/KRW,EUR/KRW,CNY/KRW";
+            const fxPromise = (async () => {
                 try {
-                    const r = await fetch(`https://api.twelvedata.com/quote?symbol=${s}&apikey=${MY_API_KEY}`);
+                    const r = await fetch(`https://api.twelvedata.com/quote?symbol=${fxSymbols}&apikey=${key}`);
                     const d = await r.json();
-                    if (d.close) {
-                        const cur = parseFloat(d.close);
-                        const pre = parseFloat(d.previous_close);
-                        document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                        formatChange(cur, pre, s);
-                    }
-                    // 다음 요청 전 0.5초 대기
-                    await new Promise(res => setTimeout(res, 500));
+                    
+                    const symbols = fxSymbols.split(',');
+                    symbols.forEach(s => {
+                        const data = d[s];
+                        const el = document.getElementById(s);
+                        if (data && data.close && el) {
+                            const cur = parseFloat(data.close);
+                            const pre = parseFloat(data.previous_close);
+                            if (s === "USD/KRW" || s === "EUR/KRW" || s === "CNY/KRW") {
+                                el.innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            } else {
+                                el.innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2});
+                            }
+                            formatChange(cur, pre, s);
+                        } else if (el) {
+                            el.innerText = "N/A";
+                        }
+                    });
                 } catch(e) { 
-                    document.getElementById(s).innerText = "N/A"; 
+                    fxSymbols.split(',').forEach(s => {
+                        const el = document.getElementById(s);
+                        if(el) el.innerText = "N/A";
+                    });
                 }
+            })();
+            // -------------------------------
+
+            await Promise.all([...yahooPromises, fxPromise]);
+
+            const spread = globalRates["10Y"] - globalRates["2Y"];
+            const prevSpread = globalRates["10Y_prev"] - globalRates["2Y_prev"];
+            const spreadEl = document.getElementById("SPREAD");
+            if (spreadEl) {
+                spreadEl.innerText = spread.toFixed(3) + "%p";
+                formatChange(spread, prevSpread, "SPREAD");
+                if (spread < 0) spreadEl.className = "value status-danger";
             }
 
-            // 3. 지표 계산 및 마무리
-            if (globalRates["10Y"] && globalRates["2Y"]) {
-                const spread = globalRates["10Y"] - globalRates["2Y"];
-                const prevSpread = globalRates["10Y_prev"] - globalRates["2Y_prev"];
-                const spreadEl = document.getElementById("SPREAD");
-                if (spreadEl) {
-                    spreadEl.innerText = spread.toFixed(3) + "%p";
-                    formatChange(spread, prevSpread, "SPREAD");
-                    spreadEl.className = spread < 0 ? "value status-danger" : "value status-safe";
-                }
-            }
-
+            const shillerVal = 35.2;
             const sEl = document.getElementById("SHILLER");
             if (sEl) {
-                const shillerVal = 35.2;
                 sEl.innerText = shillerVal.toFixed(1);
                 if (shillerVal >= 30) sEl.className = "value status-danger";
                 else if (shillerVal >= 20) sEl.className = "value status-warning";
                 else sEl.className = "value status-safe";
             }
+
             document.getElementById('status-msg').innerText = `Update: ${new Date().toLocaleTimeString()} (${((Date.now() - startTime) / 1000).toFixed(1)}s)`;
         }
+
+        function resetKey() { localStorage.removeItem('ECON_KEY_V5'); location.reload(); }
         window.onload = loadData;
     </script>
 </body>
