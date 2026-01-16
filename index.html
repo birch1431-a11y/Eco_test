@@ -20,7 +20,6 @@
         .status-danger { color: #ff4444 !important; }
         .status-warning { color: #ffbb33 !important; }
         .status-safe { color: #00ff88 !important; }
-        /* 하단 카피라이트 전용 스타일 */
         .footer-copy { text-align: center; font-size: 0.7rem; color: #555; margin: 40px 0 10px 0; border-top: 1px solid #222; padding-top: 20px; letter-spacing: 0.5px; }
     </style>
 </head>
@@ -73,7 +72,7 @@
 
     <script>
         // *** 여기에 API 키를 입력하세요 ***
-        const MY_API_KEY = "여기에_키를_넣으세요";
+        const MY_API_KEY = 7142915ec1dc45caad56dfc9fcf07341;
 
         const BASE_US_GDP = 27.94; 
         const BASE_US_MCAP = 55.2; 
@@ -172,10 +171,14 @@
                 ["^IRX", "US2Y"], ["GC=F", "GOLD"], ["SI=F", "SILVER"], ["PL=F", "PLATINUM"],
                 ["BTC-USD", "BTC"], ["ETH-USD", "ETH"], ["XRP-USD", "XRP"], ["^VIX", "VIX"]
             ];
+            
+            // 1. Yahoo 데이터 우선 로딩
             const yahooPromises = yahooItems.map(item => getYahoo(item[0], item[1]));
+            await Promise.all(yahooPromises);
 
+            // 2. 환율 데이터 순차 로딩 (0.5초 간격으로 API 제한 회피)
             const fx = ["USD/KRW", "JPY/KRW", "EUR/KRW", "CNY/KRW"];
-            const fxPromises = fx.map(async (s) => {
+            for (const s of fx) {
                 try {
                     const r = await fetch(`https://api.twelvedata.com/quote?symbol=${s}&apikey=${MY_API_KEY}`);
                     const d = await r.json();
@@ -185,11 +188,14 @@
                         document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                         formatChange(cur, pre, s);
                     }
-                } catch(e) { document.getElementById(s).innerText = "N/A"; }
-            });
+                    // 다음 요청 전 0.5초 대기
+                    await new Promise(res => setTimeout(res, 500));
+                } catch(e) { 
+                    document.getElementById(s).innerText = "N/A"; 
+                }
+            }
 
-            await Promise.all([...yahooPromises, ...fxPromises]);
-
+            // 3. 지표 계산 및 마무리
             if (globalRates["10Y"] && globalRates["2Y"]) {
                 const spread = globalRates["10Y"] - globalRates["2Y"];
                 const prevSpread = globalRates["10Y_prev"] - globalRates["2Y_prev"];
