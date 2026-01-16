@@ -20,6 +20,8 @@
         .status-danger { color: #ff4444 !important; }
         .status-warning { color: #ffbb33 !important; }
         .status-safe { color: #00ff88 !important; }
+        /* 하단 카피라이트 전용 스타일 */
+        .footer-copy { text-align: center; font-size: 0.7rem; color: #555; margin: 40px 0 10px 0; border-top: 1px solid #222; padding-top: 20px; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
@@ -53,4 +55,163 @@
     <div class="item-row"><span class="label">PLATINUM<span class="unit-text">($/oz)</span></span><div class="val-container"><span class="value" id="PLATINUM">--</span><div class="change" id="PLATINUM-c">--</div></div></div>
 
     <div class="category">Crypto (가상자산)</div><hr class="hr-short">
-    <div class="item-row"><span class="label">BTC<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="BTC">--</span><div
+    <div class="item-row"><span class="label">BTC<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="BTC">--</span><div class="change" id="BTC-c">--</div></div></div>
+    <div class="item-row"><span class="label">ETH<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="ETH">--</span><div class="change" id="ETH-c">--</div></div></div>
+    <div class="item-row"><span class="label">XRP<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
+
+    <div class="category">시장 심리 및 밸류에이션</div><hr class="hr-short">
+    <div class="item-row"><span class="label">VIX 지수<span class="unit-text">(공포지수)</span></span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
+    <div class="item-row"><span class="label">장단기 금리차<span class="unit-text">(10Y-2Y)</span></span><div class="val-container"><span class="value" id="SPREAD">--</span><div class="change" id="SPREAD-c">--</div></div></div>
+    <div class="item-row"><span class="label">버핏 지수<span class="unit-text">(실시간 연동)</span></span><span class="value" id="BUFFETT">--</span></div>
+    <div class="item-row"><span class="label">쉴러 PER<span class="unit-text">(CAPE)</span></span><span class="value" id="SHILLER">--</span></div>
+
+    <div class="footer-copy">
+        © 2026 Developed by <span style="color: #888; font-weight: 500;">S.K. Chun</span>
+    </div>
+
+    <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-bottom:30px;">데이터 로딩 중...</div>
+
+    <script>
+        // *** 여기에 API 키를 입력하세요 ***
+        const MY_API_KEY = "여기에_키를_넣으세요";
+
+        const BASE_US_GDP = 27.94; 
+        const BASE_US_MCAP = 55.2; 
+        const BASE_KR_MCAP = 2450; 
+
+        async function fetchData(url) {
+            const proxies = [`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, `https://corsproxy.io/?${encodeURIComponent(url)}` ];
+            for (let proxy of proxies) {
+                try {
+                    const res = await fetch(proxy);
+                    const json = await res.json();
+                    const data = json.contents ? JSON.parse(json.contents) : json;
+                    if (data) return data;
+                } catch (e) { continue; }
+            }
+            return null;
+        }
+
+        let globalRates = { "10Y": null, "2Y": null, "10Y_prev": null, "2Y_prev": null };
+
+        function formatChange(current, prev, id) {
+            if (!prev || !current) return "0.00";
+            const diff = current - prev;
+            const percent = (diff / prev * 100).toFixed(2);
+            const sign = diff > 0 ? "▲" : diff < 0 ? "▼" : "";
+            const cls = diff > 0 ? "up" : diff < 0 ? "down" : "";
+            const changeEl = document.getElementById(id + "-c");
+            if(changeEl) {
+                changeEl.innerHTML = `<span class="${cls}">${sign} ${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${percent}%)</span>`;
+            }
+            return percent;
+        }
+
+        async function getYahoo(ticker, id) {
+            const el = document.getElementById(id);
+            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`;
+            try {
+                const data = await fetchData(url);
+                if (data && data.chart && data.chart.result) {
+                    const meta = data.chart.result[0].meta;
+                    const price = meta.regularMarketPrice;
+                    const prev = meta.previousClose;
+
+                    if (id === "US10Y") { globalRates["10Y"] = price; globalRates["10Y_prev"] = prev; }
+                    if (id === "US2Y") { globalRates["2Y"] = price; globalRates["2Y_prev"] = prev; }
+
+                    if (el) {
+                        if (ticker === "^IXIC" || ticker === "^DJI") el.innerText = price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        else if (id.includes("US") && !id.includes("MCAP")) el.innerText = price.toFixed(3) + "%";
+                        else if (price > 100) el.innerText = price.toLocaleString(undefined, {maximumFractionDigits: 2});
+                        else el.innerText = price.toFixed(2);
+                        formatChange(price, prev, id);
+                    }
+
+                    if (ticker === "VTI") {
+                        const ratio = price / prev;
+                        const curMcap = BASE_US_MCAP * ratio;
+                        const mcapEl = document.getElementById("US_MCAP");
+                        if (mcapEl) {
+                            mcapEl.innerText = curMcap.toFixed(2);
+                            formatChange(curMcap, BASE_US_MCAP, "US_MCAP");
+                        }
+                        const liveBuffett = parseFloat((curMcap / BASE_US_GDP * 100).toFixed(1));
+                        const bEl = document.getElementById("BUFFETT");
+                        if (bEl) {
+                            bEl.innerText = liveBuffett + "%";
+                            if (liveBuffett >= 150) bEl.className = "value status-danger";
+                            else if (liveBuffett >= 120) bEl.className = "value status-warning";
+                            else bEl.className = "value status-safe";
+                        }
+                    }
+
+                    if (id === "KOSPI") {
+                        const curKrMcap = (BASE_KR_MCAP * (price / prev));
+                        const krMcapEl = document.getElementById("KR_MCAP");
+                        if (krMcapEl) {
+                            krMcapEl.innerText = Math.floor(curKrMcap).toLocaleString();
+                            formatChange(curKrMcap, BASE_KR_MCAP, "KR_MCAP");
+                        }
+                    }
+
+                    if (id === "VIX" && el) {
+                        if (price >= 30) el.className = "value status-danger";
+                        else if (price >= 20) el.className = "value status-warning";
+                        else el.className = "value status-safe";
+                    }
+                }
+            } catch (e) { if(el) el.innerText = "N/A"; }
+        }
+
+        async function loadData() {
+            const startTime = Date.now();
+            const yahooItems = [
+                ["VTI", "VTI_INTERNAL"], ["DX-Y.NYB", "DXY"], ["^GSPC", "SP500"], ["^IXIC", "NASDAQ"], ["^DJI", "DOW"],
+                ["^KS11", "KOSPI"], ["^KQ11", "KOSDAQ"], ["^TYX", "US30Y"], ["^TNX", "US10Y"],
+                ["^IRX", "US2Y"], ["GC=F", "GOLD"], ["SI=F", "SILVER"], ["PL=F", "PLATINUM"],
+                ["BTC-USD", "BTC"], ["ETH-USD", "ETH"], ["XRP-USD", "XRP"], ["^VIX", "VIX"]
+            ];
+            const yahooPromises = yahooItems.map(item => getYahoo(item[0], item[1]));
+
+            const fx = ["USD/KRW", "JPY/KRW", "EUR/KRW", "CNY/KRW"];
+            const fxPromises = fx.map(async (s) => {
+                try {
+                    const r = await fetch(`https://api.twelvedata.com/quote?symbol=${s}&apikey=${MY_API_KEY}`);
+                    const d = await r.json();
+                    if (d.close) {
+                        const cur = parseFloat(d.close);
+                        const pre = parseFloat(d.previous_close);
+                        document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        formatChange(cur, pre, s);
+                    }
+                } catch(e) { document.getElementById(s).innerText = "N/A"; }
+            });
+
+            await Promise.all([...yahooPromises, ...fxPromises]);
+
+            if (globalRates["10Y"] && globalRates["2Y"]) {
+                const spread = globalRates["10Y"] - globalRates["2Y"];
+                const prevSpread = globalRates["10Y_prev"] - globalRates["2Y_prev"];
+                const spreadEl = document.getElementById("SPREAD");
+                if (spreadEl) {
+                    spreadEl.innerText = spread.toFixed(3) + "%p";
+                    formatChange(spread, prevSpread, "SPREAD");
+                    spreadEl.className = spread < 0 ? "value status-danger" : "value status-safe";
+                }
+            }
+
+            const sEl = document.getElementById("SHILLER");
+            if (sEl) {
+                const shillerVal = 35.2;
+                sEl.innerText = shillerVal.toFixed(1);
+                if (shillerVal >= 30) sEl.className = "value status-danger";
+                else if (shillerVal >= 20) sEl.className = "value status-warning";
+                else sEl.className = "value status-safe";
+            }
+            document.getElementById('status-msg').innerText = `Update: ${new Date().toLocaleTimeString()} (${((Date.now() - startTime) / 1000).toFixed(1)}s)`;
+        }
+        window.onload = loadData;
+    </script>
+</body>
+</html>
