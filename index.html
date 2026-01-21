@@ -6,28 +6,20 @@
     <title>🔄 글로벌 경제 상황판</title>
     <style>
         body { background-color: #121212; color: #e0e0e0; font-family: -apple-system, sans-serif; padding: 15px; margin: 0; }
-        .header { 
-            text-align: center; font-size: 1.1rem; font-weight: bold; margin-bottom: 25px; 
-            color: #c5a059; cursor: pointer; padding: 10px; border: 1px solid #444; border-radius: 8px; 
-        }
+        .header { text-align: center; font-size: 1.1rem; font-weight: bold; margin-bottom: 25px; color: #c5a059; cursor: pointer; padding: 10px; border: 1px solid #444; border-radius: 8px; }
         .hr-short { border: 0; border-top: 2px solid #c5a059; width: 30px; margin: 5px 0 10px 0; }
         .category { margin-top: 25px; font-size: 0.95rem; color: #ffffff; font-weight: bold; }
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
         .label { font-size: 0.95rem; color: #bbbbbb; font-weight: 400; } 
-        .unit-text { font-size: 0.85rem; color: #888888; margin-left: 4px; } 
         .val-container { text-align: right; }
         .value { font-size: 1rem; font-weight: 600; font-family: 'Roboto Mono', monospace; color: #ffffff; display: block; }
         .change { font-size: 0.75rem; font-weight: 400; margin-top: 2px; }
-        .up { color: #ff4444; }
-        .down { color: #4488ff; }
-        .status-danger { color: #ff4444 !important; }
-        .status-warning { color: #ffbb33 !important; }
-        .status-safe { color: #00ff88 !important; }
+        .up { color: #ff4444; } .down { color: #4488ff; }
+        .status-danger { color: #ff4444 !important; } .status-warning { color: #ffbb33 !important; } .status-safe { color: #00ff88 !important; }
         .footer-copy { text-align: center; font-size: 0.7rem; color: #555; margin: 40px 0 10px 0; border-top: 1px solid #222; padding-top: 20px; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
-
     <div class="header" onclick="location.reload()">🔄 글로벌 경제 상황판</div>
 
     <div class="category">외환</div><hr class="hr-short">
@@ -38,12 +30,13 @@
     <div class="item-row"><span class="label">원/위안</span><div class="val-container"><span class="value" id="CNY/KRW">--</span><div class="change" id="CNY/KRW-c">--</div></div></div>
 
     <div class="category">주요 증시지표</div><hr class="hr-short">
-    <div class="item-row"><span class="label">미 증시 시총<span class="unit-text">($T)</span></span><div class="val-container"><span class="value" id="US_MCAP">--</span><div class="change" id="US_MCAP-c">--</div></div></div>
+    <div class="item-row"><span class="label">미 증시 시총($T)</span><div class="val-container"><span class="value" id="US_MCAP">--</span><div class="change" id="US_MCAP-c">--</div></div></div>
     <div class="item-row"><span class="label">S&P 500</span><div class="val-container"><span class="value" id="SP500">--</span><div class="change" id="SP500-c">--</div></div></div>
     <div class="item-row"><span class="label">NASDAQ</span><div class="val-container"><span class="value" id="NASDAQ">--</span><div class="change" id="NASDAQ-c">--</div></div></div>
     <div class="item-row"><span class="label">DOW</span><div class="val-container"><span class="value" id="DOW">--</span><div class="change" id="DOW-c">--</div></div></div>
-    <div class="item-row"><span class="label">한 증시 시총<span class="unit-text">(조₩)</span></span><div class="val-container"><span class="value" id="KR_MCAP">--</span><div class="change" id="KR_MCAP-c">--</div></div></div>
+    <div class="item-row"><span class="label">한 증시 시총(조₩)</span><div class="val-container"><span class="value" id="KR_MCAP">--</span><div class="change" id="KR_MCAP-c">--</div></div></div>
     <div class="item-row"><span class="label">KOSPI</span><div class="val-container"><span class="value" id="KOSPI">--</span><div class="change" id="KOSPI-c">--</div></div></div>
+    <div class="item-row"><span class="label">달러환산 KOSPI</span><div class="val-container"><span class="value" id="KOSPI_USD">--</span><div class="change" id="KOSPI_USD-c">--</div></div></div>
     <div class="item-row"><span class="label">KOSDAQ</span><div class="val-container"><span class="value" id="KOSDAQ">--</span><div class="change" id="KOSDAQ-c">--</div></div></div>
 
     <div class="category">미국 국채 금리</div><hr class="hr-short">
@@ -52,201 +45,85 @@
     <div class="item-row"><span class="label">2Y Yield</span><div class="val-container"><span class="value" id="US2Y">--</span><div class="change" id="US2Y-c">--</div></div></div>
 
     <div class="category">원자재</div><hr class="hr-short">
-    <div class="item-row"><span class="label">GOLD<span class="unit-text">($/oz)</span></span><div class="val-container"><span class="value" id="GOLD">--</span><div class="change" id="GOLD-c">--</div></div></div>
-    <div class="item-row"><span class="label">SILVER<span class="unit-text">($/oz)</span></span><div class="val-container"><span class="value" id="SILVER">--</span><div class="change" id="SILVER-c">--</div></div></div>
-    <div class="item-row"><span class="label">PLATINUM<span class="unit-text">($/oz)</span></span><div class="val-container"><span class="value" id="PLATINUM">--</span><div class="change" id="PLATINUM-c">--</div></div></div>
+    <div class="item-row"><span class="label">GOLD($/oz)</span><div class="val-container"><span class="value" id="GOLD">--</span><div class="change" id="GOLD-c">--</div></div></div>
+    <div class="item-row"><span class="label">SILVER($/oz)</span><div class="val-container"><span class="value" id="SILVER">--</span><div class="change" id="SILVER-c">--</div></div></div>
+    <div class="item-row"><span class="label">구리($/lb)</span><div class="val-container"><span class="value" id="COPPER">--</span><div class="change" id="COPPER-c">--</div></div></div>
+    <div class="item-row"><span class="label">PLATINUM($/oz)</span><div class="val-container"><span class="value" id="PLATINUM">--</span><div class="change" id="PLATINUM-c">--</div></div></div>
+    <div class="item-row"><span class="label">WTI유($/bbl)</span><div class="val-container"><span class="value" id="WTI">--</span><div class="change" id="WTI-c">--</div></div></div>
 
     <div class="category">가상자산</div><hr class="hr-short">
-    <div class="item-row"><span class="label">BTC<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="BTC">--</span><div class="change" id="BTC-c">--</div></div></div>
-    <div class="item-row"><span class="label">ETH<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="ETH">--</span><div class="change" id="ETH-c">--</div></div></div>
-    <div class="item-row"><span class="label">XRP<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
+    <div class="item-row"><span class="label">BTC($)</span><div class="val-container"><span class="value" id="BTC">--</span><div class="change" id="BTC-c">--</div></div></div>
+    <div class="item-row"><span class="label">ETH($)</span><div class="val-container"><span class="value" id="ETH">--</span><div class="change" id="ETH-c">--</div></div></div>
+    <div class="item-row"><span class="label">XRP($)</span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
 
     <div class="category">시장 심리 및 밸류에이션</div><hr class="hr-short">
-    <div class="item-row"><span class="label">VIX 지수<span class="unit-text">(공포지수)</span></span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
-    <div class="item-row"><span class="label">장단기 금리차<span class="unit-text">(10Y-2Y)</span></span><div class="val-container"><span class="value" id="SPREAD">--</span><div class="change" id="SPREAD-c">--</div></div></div>
-    <div class="item-row"><span class="label">버핏 지수<span class="unit-text">(실시간 연동)</span></span><span class="value" id="BUFFETT">--</span></div>
-    <div class="item-row"><span class="label">쉴러 PER<span class="unit-text">(CAPE)</span></span><span class="value" id="SHILLER">--</span></div>
+    <div class="item-row"><span class="label">VIX 지수</span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
+    <div class="item-row"><span class="label">장단기 금리차</span><div class="val-container"><span class="value" id="SPREAD">--</span><div class="change" id="SPREAD-c">--</div></div></div>
+    <div class="item-row"><span class="label">버핏 지수</span><span class="value" id="BUFFETT">--</span></div>
+    <div class="item-row"><span class="label">쉴러 PER</span><span class="value" id="SHILLER">--</span></div>
 
-    <div class="footer-copy">
-        2026 Developed by <span style="color: #777; font-weight: 500; font-size: 0.9rem;">S.K. Chun</span>
-    </div>
-
-    <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-bottom:30px;">데이터 로딩 중...</div>
+    <div class="footer-copy">2026 Developed by <span style="color: #777; font-weight: 500;">S.K. Chun</span></div>
+    <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-bottom:30px;">데이터 연결 중...</div>
 
     <script>
         const MY_API_KEY = "7142915ec1dc45caad56dfc9fcf07341";
-
-        // [데이터 관리 전략] 
-        // 1. GDP 상수는 분기별(1,4,7,10월 말일) 자동 반영 로직 추가
-        // 2. 쉴러 PER은 매월 15일 기준 예약값 반영
         const BASE_US_MCAP = 55.2; 
         const BASE_KR_MCAP = 2450; 
-
-        function getCurrentGDP() {
-            const today = new Date();
-            const yyyymmdd = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-            
-            // 분기별 공식 GDP 업데이트 반영 (단위: $T)
-            if (yyyymmdd >= 20261031) return 29.42;
-            if (yyyymmdd >= 20260731) return 28.91;
-            if (yyyymmdd >= 20260430) return 28.45;
-            return 27.94; // 기본값
-        }
-
-        function getScheduledShiller() {
-            const today = new Date();
-            const yyyymm = today.getFullYear() * 100 + (today.getMonth() + 1);
-            const day = today.getDate();
-
-            // 매월 15일 이후 신규 데이터 반영 시뮬레이션
-            const data = {
-                202601: 38.1, 202602: 38.3, 202603: 38.5, 202604: 38.8,
-                202605: 39.0, 202606: 39.2, 202607: 39.5, 202608: 39.7,
-                202609: 39.9, 202610: 40.1, 202611: 40.3, 202612: 40.5
-            };
-            return data[yyyymm] || 38.1;
-        }
+        let live = { k:0, kp:0, u:0, up:0, y10:0, y10p:0, y2:0, y2p:0 };
 
         async function fetchData(url) {
-            const proxies = [`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, `https://corsproxy.io/?${encodeURIComponent(url)}` ];
-            for (let proxy of proxies) {
-                try {
-                    const res = await fetch(proxy);
-                    const json = await res.json();
-                    const data = json.contents ? JSON.parse(json.contents) : json;
-                    if (data) return data;
-                } catch (e) { continue; }
-            }
-            return null;
+            const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            try {
+                const res = await fetch(proxy);
+                return await res.json();
+            } catch (e) { return null; }
         }
 
-        let globalRates = { "10Y": null, "2Y": null, "10Y_prev": null, "2Y_prev": null };
-
-        function formatChange(current, prev, id) {
-            if (!prev || !current) return "0.00";
-            const diff = current - prev;
-            const percent = (diff / prev * 100).toFixed(2);
+        function formatChange(c, p, id) {
+            const diff = c - p, pct = (diff/p*100).toFixed(2);
             const sign = diff > 0 ? "▲" : diff < 0 ? "▼" : "";
             const cls = diff > 0 ? "up" : diff < 0 ? "down" : "";
-            const changeEl = document.getElementById(id + "-c");
-            if(changeEl) {
-                changeEl.innerHTML = `<span class="${cls}">${sign} ${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${percent}%)</span>`;
-            }
-            return percent;
+            const cEl = document.getElementById(id + "-c");
+            if(cEl) cEl.innerHTML = `<span class="${cls}">${sign} ${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits:2})} (${pct}%)</span>`;
         }
 
         async function getYahoo(ticker, id) {
-            const el = document.getElementById(id);
-            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`;
             try {
-                const data = await fetchData(url);
-                if (data && data.chart && data.chart.result) {
+                const data = await fetchData(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`);
+                if (data && data.chart.result) {
                     const meta = data.chart.result[0].meta;
-                    const price = meta.regularMarketPrice;
+                    const cur = meta.regularMarketPrice;
                     const prev = meta.previousClose;
-
-                    if (id === "US10Y") { globalRates["10Y"] = price; globalRates["10Y_prev"] = prev; }
-                    if (id === "US2Y") { globalRates["2Y"] = price; globalRates["2Y_prev"] = prev; }
+                    const el = document.getElementById(id);
 
                     if (el) {
-                        if (ticker === "^IXIC" || ticker === "^DJI") el.innerText = price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                        else if (id.includes("US") && !id.includes("MCAP")) el.innerText = price.toFixed(3) + "%";
-                        else if (price > 100) el.innerText = price.toLocaleString(undefined, {maximumFractionDigits: 2});
-                        else el.innerText = price.toFixed(2);
-                        formatChange(price, prev, id);
-                    }
+                        if (ticker === "^IXIC" || ticker === "^DJI") el.innerText = cur.toLocaleString(undefined, {minimumFractionDigits:2});
+                        else if (id.includes("US") && !id.includes("MCAP")) el.innerText = cur.toFixed(3) + "%";
+                        else if (cur > 100) el.innerText = cur.toLocaleString(undefined, {maximumFractionDigits:2});
+                        else el.innerText = cur.toFixed(2);
+                        formatChange(cur, prev, id);
 
-                    if (ticker === "VTI") {
-                        const ratio = price / prev;
-                        const curMcap = BASE_US_MCAP * ratio;
-                        const mcapEl = document.getElementById("US_MCAP");
-                        if (mcapEl) {
-                            mcapEl.innerText = curMcap.toFixed(2);
-                            formatChange(curMcap, BASE_US_MCAP, "US_MCAP");
-                        }
-                        
-                        // [버핏지수 자동화] 실시간 시총 / 예약된 GDP 날짜별 자동 연동
-                        const activeGDP = getCurrentGDP();
-                        const liveBuffett = parseFloat((curMcap / activeGDP * 100).toFixed(1));
-                        const bEl = document.getElementById("BUFFETT");
-                        if (bEl) {
-                            bEl.innerText = liveBuffett + "%";
-                            if (liveBuffett >= 150) bEl.className = "value status-danger";
-                            else if (liveBuffett >= 120) bEl.className = "value status-warning";
-                            else bEl.className = "value status-safe";
+                        // VIX 전용 색상 로직 추가
+                        if (id === "VIX") {
+                            if (cur >= 30) el.className = "value status-danger";
+                            else if (cur >= 20) el.className = "value status-warning";
+                            else el.className = "value status-safe";
                         }
                     }
 
-                    if (id === "KOSPI") {
-                        const curKrMcap = (BASE_KR_MCAP * (price / prev));
-                        const krMcapEl = document.getElementById("KR_MCAP");
-                        if (krMcapEl) {
-                            krMcapEl.innerText = Math.floor(curKrMcap).toLocaleString();
-                            formatChange(curKrMcap, BASE_KR_MCAP, "KR_MCAP");
-                        }
-                    }
-
-                    if (id === "VIX" && el) {
-                        if (price >= 30) el.className = "value status-danger";
-                        else if (price >= 20) el.className = "value status-warning";
-                        else el.className = "value status-safe";
-                    }
+                    if(id === "KOSPI") { live.k=cur; live.kp=prev; updateKrMcap(cur, prev); }
+                    if(id === "US10Y") { live.y10=cur; live.y10p=prev; updateSpread(); }
+                    if(id === "US2Y") { live.y2=cur; live.y2p=prev; updateSpread(); }
+                    if(ticker === "VTI") updateUsMcap(cur, prev);
+                    updateKospiUsd();
                 }
-            } catch (e) { if(el) el.innerText = "N/A"; }
+            } catch (err) { console.error(id + " 로딩 실패"); }
         }
 
-        async function loadData() {
-            const startTime = Date.now();
-            const yahooItems = [
-                ["VTI", "VTI_INTERNAL"], ["DX-Y.NYB", "DXY"], ["^GSPC", "SP500"], ["^IXIC", "NASDAQ"], ["^DJI", "DOW"],
-                ["^KS11", "KOSPI"], ["^KQ11", "KOSDAQ"], ["^TYX", "US30Y"], ["^TNX", "US10Y"],
-                ["^IRX", "US2Y"], ["GC=F", "GOLD"], ["SI=F", "SILVER"], ["PL=F", "PLATINUM"],
-                ["BTC-USD", "BTC"], ["ETH-USD", "ETH"], ["XRP-USD", "XRP"], ["^VIX", "VIX"]
-            ];
-            
-            const yahooPromises = yahooItems.map(item => getYahoo(item[0], item[1]));
-            await Promise.all(yahooPromises);
-
-            const fx = ["USD/KRW", "JPY/KRW", "EUR/KRW", "CNY/KRW"];
-            for (const s of fx) {
-                try {
-                    const r = await fetch(`https://api.twelvedata.com/quote?symbol=${s}&apikey=${MY_API_KEY}`);
-                    const d = await r.json();
-                    if (d.close) {
-                        const cur = parseFloat(d.close);
-                        const pre = parseFloat(d.previous_close);
-                        document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                        formatChange(cur, pre, s);
-                    }
-                    await new Promise(res => setTimeout(res, 500));
-                } catch(e) { 
-                    document.getElementById(s).innerText = "N/A"; 
-                }
-            }
-
-            if (globalRates["10Y"] && globalRates["2Y"]) {
-                const spread = globalRates["10Y"] - globalRates["2Y"];
-                const prevSpread = globalRates["10Y_prev"] - globalRates["2Y_prev"];
-                const spreadEl = document.getElementById("SPREAD");
-                if (spreadEl) {
-                    spreadEl.innerText = spread.toFixed(3) + "%p";
-                    formatChange(spread, prevSpread, "SPREAD");
-                    spreadEl.className = spread < 0 ? "value status-danger" : "value status-safe";
-                }
-            }
-
-            // [쉴러 PER 예약 시스템] 매달 15일 기준 업데이트 자동화
-            const sEl = document.getElementById("SHILLER");
-            if (sEl) {
-                const shillerVal = getScheduledShiller();
-                sEl.innerText = shillerVal.toFixed(1);
-                if (shillerVal >= 30) sEl.className = "value status-danger";
-                else if (shillerVal >= 20) sEl.className = "value status-warning";
-                else sEl.className = "value status-safe";
-            }
-            document.getElementById('status-msg').innerText = `Update: ${new Date().toLocaleTimeString()} (${((Date.now() - startTime) / 1000).toFixed(1)}s)`;
-        }
-        window.onload = loadData;
-    </script>
-</body>
-</html>
+        function updateUsMcap(c, p) {
+            const m = BASE_US_MCAP * (c/p);
+            const el = document.getElementById("US_MCAP");
+            if(el) {
+                el.innerText = m.toFixed(2);
+                formatChange(m, BASE_US_MCAP, "US_MCAP");
+                const bft = (m/
