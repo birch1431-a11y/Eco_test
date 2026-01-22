@@ -1,57 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>상황판 복구모드</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🔄 글로벌 경제 상황판</title>
     <style>
-        body { background:#121212; color:white; font-family:sans-serif; padding:20px; }
-        .item-row { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333; }
-        .up { color:#ff4444; } .down { color:#4488ff; }
-        .status-danger { color:#ff4444 !important; font-weight:bold; }
-        .status-warning { color:#ffbb33 !important; font-weight:bold; }
-        .status-safe { color:#00ff88 !important; }
+        body { background-color: #121212; color: #e0e0e0; font-family: -apple-system, sans-serif; padding: 15px; margin: 0; }
+        .header { text-align: center; font-size: 1.1rem; font-weight: bold; margin-bottom: 25px; color: #c5a059; cursor: pointer; padding: 10px; border: 1px solid #444; border-radius: 8px; }
+        .category { margin-top: 25px; font-size: 0.95rem; color: #ffffff; font-weight: bold; }
+        .hr-short { border: 0; border-top: 2px solid #c5a059; width: 30px; margin: 5px 0 10px 0; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
+        .label { font-size: 0.95rem; color: #bbbbbb; } 
+        .value { font-size: 1rem; font-weight: 600; color: #ffffff; }
+        .up { color: #ff4444; } .down { color: #4488ff; }
+        .status-danger { color: #ff4444 !important; } .status-warning { color: #ffbb33 !important; } .status-safe { color: #00ff88 !important; }
     </style>
 </head>
 <body>
-    <h2>글로벌 지표 (복구모드)</h2>
-    <div id="display-area">
-        <div class="item-row"><span>S&P 500</span><span id="SP500">--</span></div>
-        <div class="item-row"><span>VIX 지수</span><span id="VIX">--</span></div>
-        <div class="item-row"><span>원/달러</span><span id="USD/KRW">--</span></div>
-        <div class="item-row"><span>구리</span><span id="COPPER">--</span></div>
-        <div class="item-row"><span>WTI유</span><span id="WTI">--</span></div>
-    </div>
+    <div class="header" onclick="location.reload()">🔄 글로벌 경제 상황판 (복구됨)</div>
+
+    <div class="category">주요 지표</div><hr class="hr-short">
+    <div class="item-row"><span class="label">S&P 500</span><span class="value" id="SP500">--</span></div>
+    <div class="item-row"><span class="label">VIX 지수</span><span class="value" id="VIX">--</span></div>
+    <div class="item-row"><span class="label">원/달러 환율</span><span class="value" id="USD/KRW">--</span></div>
+    <div class="item-row"><span class="label">구리($/lb)</span><span class="value" id="COPPER">--</span></div>
+    <div class="item-row"><span class="label">WTI유($/bbl)</span><span class="value" id="WTI">--</span></div>
 
     <script>
-        async function fetchData(ticker, id) {
-            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`;
+        // PC 브라우저 차단 우회를 위해 타임스탬프 추가
+        async function getYahoo(ticker, id) {
             try {
+                const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d&t=${new Date().getTime()}`;
                 const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
                 const data = await res.json();
-                const cur = data.chart.result[0].meta.regularMarketPrice;
-                const el = document.getElementById(id);
-                
-                if(el) {
-                    el.innerText = cur.toFixed(2);
-                    // VIX 색상 적용
-                    if (id === "VIX") {
-                        if (cur >= 30) el.className = "status-danger";
-                        else if (cur >= 20) el.className = "status-warning";
-                        else el.className = "status-safe";
+                if (data?.chart?.result) {
+                    const cur = data.chart.result[0].meta.regularMarketPrice;
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.innerText = cur.toLocaleString(undefined, {minimumFractionDigits:2});
+                        if (id === "VIX") {
+                            if (cur >= 30) el.className = "value status-danger";
+                            else if (cur >= 20) el.className = "value status-warning";
+                            else el.className = "value status-safe";
+                        }
                     }
                 }
-            } catch(e) { console.log(id + " 실패"); }
+            } catch (e) { console.error(id + " 로드 실패"); }
         }
 
-        // 우선 5개만 테스트
-        fetchData("^GSPC", "SP500");
-        fetchData("^VIX", "VIX");
-        fetchData("HG=F", "COPPER");
-        fetchData("CL=F", "WTI");
-        
-        // 환율은 별도 API 사용 (전체 코드의 로직과 동일)
-        fetch(`https://api.twelvedata.com/quote?symbol=USD/KRW&apikey=7142915ec1dc45caad56dfc9fcf07341`)
-        .then(r=>r.json()).then(d=> { if(d.close) document.getElementById("USD/KRW").innerText = parseFloat(d.close).toFixed(2); });
+        async function init() {
+            await getYahoo("^GSPC", "SP500");
+            await getYahoo("^VIX", "VIX");
+            await getYahoo("HG=F", "COPPER");
+            await getYahoo("CL=F", "WTI");
+            
+            // 환율 호출
+            fetch(`https://api.twelvedata.com/quote?symbol=USD/KRW&apikey=7142915ec1dc45caad56dfc9fcf07341`)
+            .then(r=>r.json()).then(d=>{
+                if(d.close) document.getElementById("USD/KRW").innerText = parseFloat(d.close).toLocaleString();
+            }).catch(e=>console.error("환율 실패"));
+        }
+        window.onload = init;
     </script>
 </body>
 </html>
