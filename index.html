@@ -1,63 +1,57 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🔄 글로벌 경제 상황판</title>
+    <title>상황판 복구모드</title>
     <style>
-        body { background-color: #121212; color: #e0e0e0; font-family: -apple-system, sans-serif; padding: 15px; margin: 0; }
-        .header { text-align: center; font-size: 1.1rem; font-weight: bold; margin-bottom: 25px; color: #c5a059; cursor: pointer; padding: 10px; border: 1px solid #444; border-radius: 8px; }
-        .hr-short { border: 0; border-top: 2px solid #c5a059; width: 30px; margin: 5px 0 10px 0; }
-        .category { margin-top: 25px; font-size: 0.95rem; color: #ffffff; font-weight: bold; }
-        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
-        .label { font-size: 0.95rem; color: #bbbbbb; font-weight: 400; } 
-        .val-container { text-align: right; }
-        .value { font-size: 1rem; font-weight: 600; font-family: 'Roboto Mono', monospace; color: #ffffff; display: block; }
-        .change { font-size: 0.75rem; font-weight: 400; margin-top: 2px; }
-        .up { color: #ff4444; } .down { color: #4488ff; }
-        .status-danger { color: #ff4444 !important; } .status-warning { color: #ffbb33 !important; } .status-safe { color: #00ff88 !important; }
-        .footer-copy { text-align: center; font-size: 0.7rem; color: #555; margin: 40px 0 10px 0; border-top: 1px solid #222; padding-top: 20px; letter-spacing: 0.5px; }
+        body { background:#121212; color:white; font-family:sans-serif; padding:20px; }
+        .item-row { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333; }
+        .up { color:#ff4444; } .down { color:#4488ff; }
+        .status-danger { color:#ff4444 !important; font-weight:bold; }
+        .status-warning { color:#ffbb33 !important; font-weight:bold; }
+        .status-safe { color:#00ff88 !important; }
     </style>
 </head>
 <body>
-    <div class="header" onclick="location.reload()">🔄 글로벌 경제 상황판</div>
+    <h2>글로벌 지표 (복구모드)</h2>
+    <div id="display-area">
+        <div class="item-row"><span>S&P 500</span><span id="SP500">--</span></div>
+        <div class="item-row"><span>VIX 지수</span><span id="VIX">--</span></div>
+        <div class="item-row"><span>원/달러</span><span id="USD/KRW">--</span></div>
+        <div class="item-row"><span>구리</span><span id="COPPER">--</span></div>
+        <div class="item-row"><span>WTI유</span><span id="WTI">--</span></div>
+    </div>
 
-    <div class="category">외환</div><hr class="hr-short">
-    <div class="item-row"><span class="label">달러지수</span><div class="val-container"><span class="value" id="DXY">--</span><div class="change" id="DXY-c">--</div></div></div>
-    <div class="item-row"><span class="label">원/달러</span><div class="val-container"><span class="value" id="USD/KRW">--</span><div class="change" id="USD/KRW-c">--</div></div></div>
-    <div class="item-row"><span class="label">원/엔</span><div class="val-container"><span class="value" id="JPY/KRW">--</span><div class="change" id="JPY/KRW-c">--</div></div></div>
-    <div class="item-row"><span class="label">원/유로</span><div class="val-container"><span class="value" id="EUR/KRW">--</span><div class="change" id="EUR/KRW-c">--</div></div></div>
-    <div class="item-row"><span class="label">원/위안</span><div class="val-container"><span class="value" id="CNY/KRW">--</span><div class="change" id="CNY/KRW-c">--</div></div></div>
+    <script>
+        async function fetchData(ticker, id) {
+            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`;
+            try {
+                const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+                const data = await res.json();
+                const cur = data.chart.result[0].meta.regularMarketPrice;
+                const el = document.getElementById(id);
+                
+                if(el) {
+                    el.innerText = cur.toFixed(2);
+                    // VIX 색상 적용
+                    if (id === "VIX") {
+                        if (cur >= 30) el.className = "status-danger";
+                        else if (cur >= 20) el.className = "status-warning";
+                        else el.className = "status-safe";
+                    }
+                }
+            } catch(e) { console.log(id + " 실패"); }
+        }
 
-    <div class="category">주요 증시지표</div><hr class="hr-short">
-    <div class="item-row"><span class="label">미 증시 시총($T)</span><div class="val-container"><span class="value" id="US_MCAP">--</span><div class="change" id="US_MCAP-c">--</div></div></div>
-    <div class="item-row"><span class="label">S&P 500</span><div class="val-container"><span class="value" id="SP500">--</span><div class="change" id="SP500-c">--</div></div></div>
-    <div class="item-row"><span class="label">NASDAQ</span><div class="val-container"><span class="value" id="NASDAQ">--</span><div class="change" id="NASDAQ-c">--</div></div></div>
-    <div class="item-row"><span class="label">DOW</span><div class="val-container"><span class="value" id="DOW">--</span><div class="change" id="DOW-c">--</div></div></div>
-    <div class="item-row"><span class="label">한 증시 시총(조₩)</span><div class="val-container"><span class="value" id="KR_MCAP">--</span><div class="change" id="KR_MCAP-c">--</div></div></div>
-    <div class="item-row"><span class="label">KOSPI</span><div class="val-container"><span class="value" id="KOSPI">--</span><div class="change" id="KOSPI-c">--</div></div></div>
-    <div class="item-row"><span class="label">달러환산 KOSPI</span><div class="val-container"><span class="value" id="KOSPI_USD">--</span><div class="change" id="KOSPI_USD-c">--</div></div></div>
-    <div class="item-row"><span class="label">KOSDAQ</span><div class="val-container"><span class="value" id="KOSDAQ">--</span><div class="change" id="KOSDAQ-c">--</div></div></div>
-
-    <div class="category">미국 국채 금리</div><hr class="hr-short">
-    <div class="item-row"><span class="label">30Y Yield</span><div class="val-container"><span class="value" id="US30Y">--</span><div class="change" id="US30Y-c">--</div></div></div>
-    <div class="item-row"><span class="label">10Y Yield</span><div class="val-container"><span class="value" id="US10Y">--</span><div class="change" id="US10Y-c">--</div></div></div>
-    <div class="item-row"><span class="label">2Y Yield</span><div class="val-container"><span class="value" id="US2Y">--</span><div class="change" id="US2Y-c">--</div></div></div>
-
-    <div class="category">원자재</div><hr class="hr-short">
-    <div class="item-row"><span class="label">GOLD($/oz)</span><div class="val-container"><span class="value" id="GOLD">--</span><div class="change" id="GOLD-c">--</div></div></div>
-    <div class="item-row"><span class="label">SILVER($/oz)</span><div class="val-container"><span class="value" id="SILVER">--</span><div class="change" id="SILVER-c">--</div></div></div>
-    <div class="item-row"><span class="label">구리($/lb)</span><div class="val-container"><span class="value" id="COPPER">--</span><div class="change" id="COPPER-c">--</div></div></div>
-    <div class="item-row"><span class="label">PLATINUM($/oz)</span><div class="val-container"><span class="value" id="PLATINUM">--</span><div class="change" id="PLATINUM-c">--</div></div></div>
-    <div class="item-row"><span class="label">WTI유($/bbl)</span><div class="val-container"><span class="value" id="WTI">--</span><div class="change" id="WTI-c">--</div></div></div>
-
-    <div class="category">가상자산</div><hr class="hr-short">
-    <div class="item-row"><span class="label">BTC($)</span><div class="val-container"><span class="value" id="BTC">--</span><div class="change" id="BTC-c">--</div></div></div>
-    <div class="item-row"><span class="label">ETH($)</span><div class="val-container"><span class="value" id="ETH">--</span><div class="change" id="ETH-c">--</div></div></div>
-    <div class="item-row"><span class="label">XRP($)</span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
-
-    <div class="category">시장 심리 및 밸류에이션</div><hr class="hr-short">
-    <div class="item-row"><span class="label">VIX 지수</span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
-    <div class="item-row"><span class="label">장단기 금리차</span><div class="val-container"><span class="value" id="SPREAD">--</span><div class="change" id="SPREAD-c">--</div></div></div>
-    <div class="item-row"><span class="label">버핏 지수</span><span class="value" id="BUFFETT">--</span></div>
-    <div class="item-row"><span class="label">쉴러 PER</span><span class="value" id="SHILLER">--</span></div>
+        // 우선 5개만 테스트
+        fetchData("^GSPC", "SP500");
+        fetchData("^VIX", "VIX");
+        fetchData("HG=F", "COPPER");
+        fetchData("CL=F", "WTI");
+        
+        // 환율은 별도 API 사용 (전체 코드의 로직과 동일)
+        fetch(`https://api.twelvedata.com/quote?symbol=USD/KRW&apikey=7142915ec1dc45caad56dfc9fcf07341`)
+        .then(r=>r.json()).then(d=> { if(d.close) document.getElementById("USD/KRW").innerText = parseFloat(d.close).toFixed(2); });
+    </script>
+</body>
+</html>
